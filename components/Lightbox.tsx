@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { blurFor } from "@/lib/blur";
 import { useWycena } from "@/components/wycena/WycenaProvider";
 import type { Project } from "@/lib/content";
 
@@ -14,9 +15,21 @@ export function Lightbox({
 }) {
   const { otworz } = useWycena();
   const [i, setI] = useState(0);
+  /* Które kadry są już wczytane i który z nich faktycznie pokazujemy. */
+  const [wczytane, setWczytane] = useState<Record<number, boolean>>({});
+  const [ostatnieGotowe, setOstatnieGotowe] = useState(0);
   const panel = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setI(0), [project]);
+  useEffect(() => {
+    setI(0);
+    setWczytane({});
+    setOstatnieGotowe(0);
+  }, [project]);
+
+  /* Dopóki wybrany kadr się nie wczytał, na ekranie zostaje ostatni gotowy. */
+  useEffect(() => {
+    if (wczytane[i]) setOstatnieGotowe(i);
+  }, [i, wczytane]);
 
   const go = useCallback(
     (d: number) => {
@@ -63,6 +76,7 @@ export function Lightbox({
 
   if (!project) return null;
   const photo = project.photos[i];
+  const widoczne = wczytane[i] ? i : ostatnieGotowe;
 
   return (
     <div
@@ -116,31 +130,31 @@ export function Lightbox({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* Wszystkie zdjęcia projektu są w DOM od razu i tylko się
-            przenikają. Wcześniej `key` wymuszał remount <Image>, więc każde
-            przełączenie zaczynało pobieranie od zera i pokazywało czarne tło
-            kontenera. Teraz sąsiednie kadry są już wczytane, a zmiana jest
-            natychmiastowa. */}
+        {/* Każdy kadr ma rozmyty podgląd, więc od pierwszej klatki widać
+            treść, a nie czarne tło kontenera. Pełne zdjęcie przejmuje ekran
+            dopiero, gdy się wczyta — do tego czasu zostaje poprzednie.
+            Sąsiednie kadry dostają `priority`, żeby „dalej" było natychmiast. */}
         <div className="relative h-full w-full">
           {project.photos.map((p, k) => {
-            const aktywne = k === i;
-            /* Pobieramy z wyprzedzeniem bieżące i oba sąsiednie kadry. */
-            const blisko =
-              Math.min(
-                Math.abs(k - i),
-                project.photos.length - Math.abs(k - i),
-              ) <= 1;
+            const dystans = Math.min(
+              Math.abs(k - i),
+              project.photos.length - Math.abs(k - i),
+            );
             return (
               <Image
                 key={p.src}
                 src={p.src}
-                alt={aktywne ? p.alt : ""}
+                alt={k === widoczne ? p.alt : ""}
                 fill
                 sizes="100vw"
-                priority={blisko}
-                aria-hidden={!aktywne}
-                className="object-contain transition-opacity duration-300 ease-[var(--ease-out-quint)]"
-                style={{ opacity: aktywne ? 1 : 0 }}
+                quality={82}
+                priority={dystans <= 1}
+                placeholder="blur"
+                blurDataURL={blurFor(p.src)}
+                aria-hidden={k !== widoczne}
+                onLoad={() => setWczytane((w) => (w[k] ? w : { ...w, [k]: true }))}
+                className="object-contain transition-opacity duration-200 ease-linear"
+                style={{ opacity: k === widoczne ? 1 : 0 }}
               />
             );
           })}
@@ -171,7 +185,6 @@ export function Lightbox({
           </div>
         </div>
       </div>
-
     </div>
   );
 }

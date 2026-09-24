@@ -1,326 +1,331 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import { gsap, useGsap, reducedMotion } from "@/lib/gsap";
-import { SectionHead } from "./Section";
 import { works } from "@/lib/content";
+import { blurFor } from "@/lib/blur";
 
 /**
- * Zakres prac.
+ * Zakres prac — przypięta sekwencja.
  *
- * Jedna sekcja zamiast dwóch powtarzających się: lista po lewej, duży kadr po
- * prawej. Pozycję wybiera użytkownik kliknięciem, nic nie przewija się samo.
+ * Sekcja zatrzymuje się pod nagłówkiem, a dalsze przewijanie przesuwa tylko
+ * aktywną pozycję. Trasa dzieli się na `works.length + 1` rozdziałów: osiem
+ * dla usług i jeden dodatkowy na końcu, żeby ostatnie zdjęcie zostało na
+ * ekranie tak samo długo jak poprzednie.
  *
- * Wysokość sekcji jest stała: kadr ma ustaloną proporcję, a blok opisu pod nim
- * ma minimalną wysokość, więc zmiana pozycji nie przesuwa strony.
+ * Stanem steruje jedna scrubowana oś czasu GSAP, a nie stan Reacta.
+ * Pierwsza wersja liczyła indeks w `onUpdate` zwykłego wyzwalacza i to był
+ * błąd: bez `scrub` callback odpalał się dwa razy na całą trasę, więc numery
+ * przeskakiwały po kilka naraz. Przy `scrub` playhead jest przypięty do
+ * pozycji przewijania klatka po klatce, przewijanie w tył odtwarza kolejność
+ * dokładnie odwrotnie, a React nie przerysowuje się ani razu.
  */
+
+const ROZDZIAL_DESKTOP = 0.5;
+const ROZDZIAL_MOBILE = 0.45;
+/** Długość przenikania w jednostkach osi czasu (1 jednostka = 1 rozdział). */
+const PRZENIKANIE = 0.22;
+
+const NIEAKTYWNY = "rgba(25, 26, 25, 0.35)";
+const AKTYWNY = "rgb(25, 26, 25)";
+
 export function CoRobimy() {
   const root = useRef<HTMLElement>(null);
-  const list = useRef<HTMLOListElement>(null);
-  const rows = useRef<(HTMLLIElement | null)[]>([]);
-  const indicator = useRef<HTMLSpanElement>(null);
-  const layers = useRef<(HTMLDivElement | null)[]>([]);
-  const caption = useRef<HTMLDivElement>(null);
+  const os = useRef<gsap.core.Timeline | null>(null);
+  const bezRuchu = typeof window !== "undefined" && reducedMotion();
 
-  const [active, setActive] = useState(0);
-  const prev = useRef(0);
-
-  /* Wejście sekcji. */
   useGsap(root, () => {
-    gsap.fromTo(
-      ".work-row",
-      { opacity: 0, y: 22 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.9,
-        stagger: 0.05,
-        ease: "expo.out",
-        scrollTrigger: { trigger: ".work-list", start: "top 85%" },
-      },
-    );
+    if (reducedMotion()) return;
+    const el = root.current;
+    if (!el) return;
 
-    gsap.fromTo(
-      ".work-frame",
-      { clipPath: "inset(0% 0% 100% 0%)" },
-      {
-        clipPath: "inset(0% 0% 0% 0%)",
-        duration: 1.3,
-        ease: "expo.out",
-        scrollTrigger: { trigger: ".work-frame", start: "top 88%" },
+    const rozdzialy = works.length + 1;
+    const ostatni = works.length - 1;
+
+    /* Wysokość nagłówka w stanie zwartym — w takim właśnie jest, kiedy
+       sekcja jest przypięta. Mierzenie go przy odświeżeniu dawało 88 px
+       (stan nad hero) i zostawiało lukę pod paskiem. Te same wartości ma
+       wysokość sekcji niżej, więc kadr wypełnia ekran co do piksela. */
+    const wysokoscNaglowka = () =>
+      window.matchMedia("(min-width: 1024px)").matches ? 68 : 64;
+
+    const dlugoscRozdzialu = () =>
+      Math.round(
+        window.innerHeight *
+          (window.matchMedia("(min-width: 1024px)").matches
+            ? ROZDZIAL_DESKTOP
+            : ROZDZIAL_MOBILE),
+      );
+
+    const tl = gsap.timeline({
+      defaults: { ease: "none" },
+      scrollTrigger: {
+        trigger: el,
+        start: () => `top ${wysokoscNaglowka()}px`,
+        end: () => `+=${rozdzialy * dlugoscRozdzialu()}`,
+        pin: true,
+        pinSpacing: true,
+        anticipatePin: 1,
+        scrub: 0.3,
+        invalidateOnRefresh: true,
       },
-    );
+    });
+    os.current = tl;
+
+    works.forEach((_, i) => {
+      const warstwy = el.querySelectorAll(`[data-krok="${i}"]`);
+      const tytul = el.querySelector(`[data-tytul="${i}"]`);
+      const wskaznik = el.querySelector(`[data-wskaznik="${i}"]`);
+
+      /* Wejście rozdziału. Pierwszy jest widoczny od startu. */
+      if (i > 0) {
+        tl.to(warstwy, { opacity: 1, duration: PRZENIKANIE }, i);
+        if (tytul) tl.to(tytul, { color: AKTYWNY, duration: PRZENIKANIE }, i);
+        if (wskaznik) tl.to(wskaznik, { width: 40, duration: PRZENIKANIE }, i);
+      }
+
+      /* Wyjście. Ostatni zostaje do końca, bo po nim idzie przytrzymanie. */
+      if (i < ostatni) {
+        tl.to(warstwy, { opacity: 0, duration: PRZENIKANIE }, i + 1);
+        if (tytul) tl.to(tytul, { color: NIEAKTYWNY, duration: PRZENIKANIE }, i + 1);
+        if (wskaznik) tl.to(wskaznik, { width: 0, duration: PRZENIKANIE }, i + 1);
+      }
+    });
+
+    /* Puste przytrzymanie: ostatnie zdjęcie dostaje własny rozdział, zanim
+       sekcja się odepnie. */
+    tl.to({}, { duration: 1 }, works.length);
   });
 
-  /* Żółty wskaźnik jedzie do aktywnego wiersza. Jedyny właściciel jego
-     `y` i `height`. */
-  useEffect(() => {
-    const move = (instant = false) => {
-      const row = rows.current[active];
-      const bar = indicator.current;
-      const ol = list.current;
-      if (!row || !bar || !ol) return;
-      /* `ol` ma position: relative, więc jest offsetParentem wierszy i
-         `offsetTop` liczy się już względem niego. */
-      const y = row.offsetTop;
-      const h = row.offsetHeight;
-      if (instant || reducedMotion()) {
-        gsap.set(bar, { y, height: h });
-      } else {
-        gsap.to(bar, { y, height: h, duration: 0.55, ease: "expo.out" });
-      }
-    };
+  /* Kliknięcie przesuwa stronę na środek rozdziału — oś czasu podąża za
+     przewijaniem, więc nic nie walczy ze sobą. */
+  const idzDo = (i: number) => {
+    const st = os.current?.scrollTrigger;
+    if (!st) return;
+    const rozdzialy = works.length + 1;
+    window.scrollTo({
+      top: st.start + (st.end - st.start) * ((i + 0.5) / rozdzialy),
+      behavior: "smooth",
+    });
+  };
 
-    move();
-    const ro = new ResizeObserver(() => move(true));
-    if (list.current) ro.observe(list.current);
-    return () => ro.disconnect();
-  }, [active]);
-
-  /**
-   * Telefon: aktywna pozycja idzie za scrollem.
-   *
-   * Kadr jest przyklejony pod nagłówkiem, więc szukamy wiersza, którego
-   * środek jest najbliżej linii pod nim. Dzięki temu przewijanie listy samo
-   * przełącza zdjęcia i nic nie trzeba klikać. Tapnięcie nadal działa —
-   * po prostu trzyma się do następnego ruchu strony.
-   *
-   * Na desktopie nie robimy nic: tam wybór należy do kliknięcia.
-   */
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    let frame = 0;
-
-    const czytaj = () => {
-      frame = 0;
-      const sekcja = root.current;
-      if (!sekcja) return;
-
-      /* Poza ekranem nie ma czego synchronizować. */
-      const r = sekcja.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) return;
-
-      const linia = window.innerHeight * 0.68;
-      let najlepszy = 0;
-      let najblizej = Infinity;
-
-      rows.current.forEach((row, i) => {
-        if (!row) return;
-        const b = row.getBoundingClientRect();
-        const dystans = Math.abs(b.top + b.height / 2 - linia);
-        if (dystans < najblizej) {
-          najblizej = dystans;
-          najlepszy = i;
-        }
-      });
-
-      setActive((a) => (a === najlepszy ? a : najlepszy));
-    };
-
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(czytaj);
-    };
-
-    const wlacz = () => {
-      window.removeEventListener("scroll", onScroll);
-      if (mq.matches) return;
-      window.addEventListener("scroll", onScroll, { passive: true });
-    };
-
-    wlacz();
-    mq.addEventListener("change", wlacz);
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      mq.removeEventListener("change", wlacz);
-    };
-  }, []);
-
-  /* Podmiana kadru maską w bok. Właścicielem `clipPath` warstw jest tylko
-     ten efekt. */
-  useEffect(() => {
-    const from = prev.current;
-    const to = active;
-    prev.current = to;
-    if (from === to) return;
-
-    const outEl = layers.current[from];
-    const inEl = layers.current[to];
-    if (!outEl || !inEl) return;
-
-    if (reducedMotion()) {
-      gsap.set(outEl, { clipPath: "inset(0 0 0 100%)", zIndex: 1 });
-      gsap.set(inEl, { clipPath: "inset(0 0 0 0%)", zIndex: 2 });
-      return;
-    }
-
-    const forward = to > from;
-    gsap.set(inEl, { zIndex: 2 });
-    gsap.set(outEl, { zIndex: 1 });
-
-    gsap
-      .timeline({ defaults: { ease: "expo.inOut" } })
-      .fromTo(
-        inEl,
-        { clipPath: forward ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)" },
-        { clipPath: "inset(0 0 0 0%)", duration: 1 },
-        0,
-      )
-      .fromTo(
-        inEl.querySelector(".work-img"),
-        { scale: 1.12 },
-        { scale: 1, duration: 1.35, ease: "expo.out" },
-        0,
-      )
-      .to(
-        outEl,
-        { clipPath: forward ? "inset(0 100% 0 0)" : "inset(0 0 0 100%)", duration: 1 },
-        0,
-      );
-
-    if (caption.current) {
-      gsap.fromTo(
-        caption.current.querySelectorAll(".work-cap"),
-        { yPercent: 110 },
-        { yPercent: 0, duration: 0.85, stagger: 0.05, ease: "expo.out" },
-      );
-    }
-  }, [active]);
-
-  const current = works[active];
+  /* Bez ruchu: zwykła, przewijalna lista. Nic nie jest przypięte. */
+  if (bezRuchu) {
+    return (
+      <section
+        id="zakres"
+        className="gut scroll-mt-20 py-[clamp(3.5rem,6.5vw,5.5rem)]"
+      >
+        <Glowka />
+        <ol className="mt-8 flex flex-col gap-10">
+          {works.map((w) => (
+            <li key={w.no} className="spine pt-6">
+              <div className="flex items-baseline gap-4">
+                <span className="eyebrow shrink-0 tabular-nums text-yellow">
+                  {w.no}
+                </span>
+                <h3 className="font-display text-[clamp(1.1rem,2.4vw,1.6rem)] font-extrabold tracking-[-0.035em] uppercase">
+                  {w.title}
+                </h3>
+              </div>
+              <p className="mt-2 text-sm text-grey">{w.note}</p>
+              <div className="relative mt-4 aspect-[16/10] w-full overflow-hidden bg-graphite">
+                <Image
+                  src={w.photo.src}
+                  alt={w.photo.alt}
+                  fill
+                  sizes="(min-width:1024px) 56vw, 100vw"
+                  placeholder="blur"
+                  blurDataURL={blurFor(w.photo.src)}
+                  className="object-cover"
+                />
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
 
   return (
     <section
       id="zakres"
       ref={root}
-      className="gut scroll-mt-20 py-[clamp(4rem,7.5vw,6.25rem)]"
+      className="gut flex h-[calc(100svh-64px)] min-h-[560px] flex-col justify-center overflow-hidden bg-bone py-6 lg:h-[calc(100svh-68px)] lg:py-8"
     >
-      <SectionHead
-        label="Zakres"
-        lines={["Co robimy."]}
-        lead={
-          <>
-            Zakres prac przy konkretnej inwestycji ustalamy przy wycenie.
-            Zdjęcia pochodzą z różnych budów.
-          </>
-        }
-      />
+      <Glowka warstwowy />
 
-      <div className="mt-[clamp(2rem,4.5vw,3.25rem)] grid gap-x-8 gap-y-8 lg:grid-cols-12">
-        {/* Kadr. Na telefonie stoi nad listą. */}
-        <div
-          className="sticky top-[76px] z-10 -mx-gutter bg-bone px-gutter pb-4 lg:static lg:z-auto lg:mx-0 lg:px-0 lg:pb-0 lg:col-span-7 lg:col-start-6 lg:row-start-1"
-        >
-          <div className="work-frame relative aspect-[16/10] w-full overflow-hidden bg-graphite sm:aspect-[4/3]">
+      {/* Desktop: lista po lewej, kadr po prawej. */}
+      <div className="mt-6 hidden min-h-0 flex-1 gap-x-10 lg:grid lg:grid-cols-12">
+        <ol className="lg:col-span-5 lg:self-center">
+          {works.map((w, i) => (
+            <li key={w.no} className="spine">
+              <button
+                type="button"
+                onClick={() => idzDo(i)}
+                className="flex w-full items-baseline gap-5 py-[clamp(0.6rem,1.2vw,0.95rem)] text-left"
+              >
+                <span className="eyebrow w-7 shrink-0 tabular-nums text-grey">
+                  {w.no}
+                </span>
+                <span
+                  data-tytul={i}
+                  style={{ color: i === 0 ? AKTYWNY : NIEAKTYWNY }}
+                  className="font-display text-[clamp(1.05rem,2vw,1.6rem)] font-extrabold tracking-[-0.035em] uppercase"
+                >
+                  {w.title}
+                </span>
+                <span
+                  data-wskaznik={i}
+                  style={{ width: i === 0 ? 40 : 0 }}
+                  className="ml-auto h-px shrink-0 self-center bg-yellow"
+                />
+              </button>
+            </li>
+          ))}
+          <li className="spine" />
+        </ol>
+
+        <div className="flex min-h-0 flex-col lg:col-span-7">
+          <Kadr className="min-h-0 flex-1" />
+          <div className="relative mt-3 h-[3.25rem] shrink-0">
             {works.map((w, i) => (
               <div
                 key={w.no}
-                ref={(el) => {
-                  layers.current[i] = el;
-                }}
-                aria-hidden={i !== active}
-                className="absolute inset-0"
-                style={{
-                  clipPath: i === 0 ? "inset(0 0 0 0%)" : "inset(0 0 0 100%)",
-                  zIndex: i === 0 ? 2 : 1,
-                }}
+                data-krok={i}
+                style={{ opacity: i === 0 ? 1 : 0 }}
+                className="absolute inset-0 flex flex-col gap-1"
               >
-                <div className="work-img absolute inset-0">
-                  <Image
-                    src={w.photo.src}
-                    alt={i === active ? w.photo.alt : ""}
-                    fill
-                    sizes="(min-width:1024px) 58vw, 100vw"
-                    className="object-cover"
-                  />
-                </div>
+                <span className="font-display text-[1rem] font-extrabold tracking-[-0.02em] uppercase">
+                  {w.title}
+                </span>
+                <span className="text-sm text-grey">{w.note}</span>
               </div>
             ))}
-
-            <span className="pointer-events-none absolute bottom-0 left-0 z-10 bg-yellow px-4 pt-1.5 pb-1 font-display text-[clamp(1.6rem,3.4vw,2.5rem)] leading-none font-extrabold tracking-[-0.05em] text-graphite tabular-nums">
-              {current.no}
-            </span>
-          </div>
-
-          {/* Stała wysokość, żeby zmiana opisu nie ruszała układu. */}
-          <div
-            ref={caption}
-            className="mt-4 flex min-h-[3.25rem] flex-col gap-1 sm:min-h-[3rem]"
-          >
-            <span className="block overflow-hidden pb-0.5">
-              <span className="work-cap block font-display text-[1.0625rem] font-extrabold tracking-[-0.02em] uppercase">
-                {current.title}
-              </span>
-            </span>
-            <span className="block overflow-hidden pb-0.5">
-              <span className="work-cap block text-sm text-grey">
-                {current.note}
-              </span>
-            </span>
           </div>
         </div>
+      </div>
 
-        {/* Lista */}
-        <div className="lg:col-span-5 lg:col-start-1 lg:row-start-1 lg:self-center">
-          <ol ref={list} className="work-list relative">
-            {/* Cienki żółty wskaźnik aktywnej pozycji. */}
-            <span
-              ref={indicator}
-              aria-hidden="true"
-              className="absolute top-0 left-0 z-10 w-[2px] bg-yellow"
-            />
+      {/* Telefon: kadr, aktywna pozycja, opis, pasek postępu. */}
+      <div className="mt-5 flex min-h-0 flex-1 flex-col lg:hidden">
+        <Kadr className="min-h-0 flex-1" />
 
-            {works.map((w, i) => {
-              const on = i === active;
-              return (
-                <li
-                  key={w.no}
-                  ref={(el) => {
-                    rows.current[i] = el;
-                  }}
-                  className="work-row anim-hide spine"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setActive(i)}
-                    aria-current={on ? "true" : undefined}
-                    className="group flex w-full items-baseline gap-4 py-[clamp(1.05rem,3.2vw,1.15rem)] pl-5 text-left sm:gap-6"
-                  >
-                    <span
-                      className={[
-                        "eyebrow shrink-0 tabular-nums transition-colors duration-300",
-                        on ? "text-yellow" : "text-grey",
-                      ].join(" ")}
-                    >
-                      {w.no}
-                    </span>
+        <div className="relative mt-4 h-[6.5rem] shrink-0">
+          {works.map((w, i) => (
+            <div
+              key={w.no}
+              data-krok={i}
+              style={{ opacity: i === 0 ? 1 : 0 }}
+              className="absolute inset-0"
+            >
+              <div className="flex items-baseline gap-3">
+                <span className="eyebrow shrink-0 tabular-nums text-yellow">
+                  {w.no}
+                </span>
+                <h3 className="font-display text-[clamp(1.15rem,5.5vw,1.6rem)] leading-[1.1] font-extrabold tracking-[-0.035em] uppercase">
+                  {w.title}
+                </h3>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-grey">{w.note}</p>
+            </div>
+          ))}
+        </div>
 
-                    <span
-                      className={[
-                        "font-display text-[clamp(1.2rem,2.6vw,1.9rem)] font-extrabold tracking-[-0.035em] uppercase transition-colors duration-300",
-                        on
-                          ? "text-graphite"
-                          : "text-graphite/40 group-hover:text-graphite/75",
-                      ].join(" ")}
-                    >
-                      {w.title}
-                    </span>
-
-                    <span
-                      className={[
-                        "ml-auto h-px shrink-0 self-center bg-graphite/30 transition-[width] duration-[600ms] ease-[var(--ease-out-quint)]",
-                        on ? "w-0" : "w-0 group-hover:w-5",
-                      ].join(" ")}
-                    />
-                  </button>
-                </li>
-              );
-            })}
-            <li className="spine" />
-          </ol>
+        <div className="mt-2 flex shrink-0 gap-1.5">
+          {works.map((w, i) => (
+            <button
+              key={w.no}
+              type="button"
+              onClick={() => idzDo(i)}
+              className="h-6 flex-1 pt-2.5"
+            >
+              <span className="sr-only">{w.title}</span>
+              <span className="relative block h-[3px] w-full bg-graphite/15">
+                <span
+                  data-krok={i}
+                  style={{ opacity: i === 0 ? 1 : 0 }}
+                  className="absolute inset-0 bg-yellow"
+                />
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function Glowka({ warstwowy = false }: { warstwowy?: boolean }) {
+  return (
+    <div className="shrink-0">
+      <div className="h-px bg-[var(--rule)]" />
+      <div className="flex items-baseline justify-between gap-6 pt-4">
+        <p className="eyebrow text-grey">Zakres</p>
+        <p className="eyebrow tabular-nums text-grey">
+          {warstwowy ? (
+            <span className="relative inline-block h-[1em] w-[2.2ch] align-baseline">
+              {works.map((w, i) => (
+                <span
+                  key={w.no}
+                  data-krok={i}
+                  style={{ opacity: i === 0 ? 1 : 0 }}
+                  className="absolute inset-0"
+                >
+                  {w.no}
+                </span>
+              ))}
+            </span>
+          ) : (
+            works[0].no
+          )}{" "}
+          / {String(works.length).padStart(2, "0")}
+        </p>
+      </div>
+      <h2 className="mt-3 text-[clamp(1.6rem,4.5vw,3.25rem)]">Co robimy.</h2>
+    </div>
+  );
+}
+
+/** Kadr. Wszystkie zdjęcia są w DOM i tylko się przenikają. */
+function Kadr({ className = "" }: { className?: string }) {
+  return (
+    <div className={`relative w-full overflow-hidden bg-graphite ${className}`}>
+      {works.map((w, i) => (
+        <div
+          key={w.no}
+          data-krok={i}
+          style={{ opacity: i === 0 ? 1 : 0 }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={w.photo.src}
+            alt={w.photo.alt}
+            fill
+            sizes="(min-width:1024px) 56vw, 100vw"
+            placeholder="blur"
+            blurDataURL={blurFor(w.photo.src)}
+            /* Sekwencja i tak pokaże wszystkie kadry, a scrub nie może czekać
+               na pobieranie. */
+            loading="eager"
+            priority={i === 0}
+            className="object-cover"
+          />
+        </div>
+      ))}
+
+      <span className="pointer-events-none absolute bottom-0 left-0 z-10 block h-[2.2em] w-[2.6em] bg-yellow font-display text-[clamp(1.3rem,2.6vw,2rem)] leading-none font-extrabold tracking-[-0.05em] text-graphite tabular-nums">
+        {works.map((w, i) => (
+          <span
+            key={w.no}
+            data-krok={i}
+            style={{ opacity: i === 0 ? 1 : 0 }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            {w.no}
+          </span>
+        ))}
+      </span>
+    </div>
   );
 }
