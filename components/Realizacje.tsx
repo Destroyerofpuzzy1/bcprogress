@@ -6,115 +6,61 @@ import { gsap, useGsap } from "@/lib/gsap";
 import { SectionHead } from "./Section";
 import { Lightbox } from "./Lightbox";
 import { projects, type Project } from "@/lib/content";
+import { blurFor } from "@/lib/blur";
 
 /**
- * Rytm siatki.
+ * Realizacje.
  *
- * Telefon ma własną reżyserię, a nie zwężony desktop: raz kadr pionowy na całą
- * szerokość, raz niższy poziomy, raz węższy wcięty do krawędzi. `mFrame`
- * opisuje kadr na telefonie, `col`/`ratio` układ od `lg` w górę.
+ * Zwarta siatka kafli zamiast długiej kolumny dużych kadrów: pierwszy kafel
+ * jest szeroki i otwiera układ, reszta wypełnia dwa rzędy. Szczeliny są
+ * minimalne, żeby całość czytała się jak jedna plansza, a nie zbiór kart.
  */
-const layout = [
-  {
-    col: "lg:col-span-6",
-    ratio: "lg:aspect-[4/5]",
-    push: "",
-    mFrame: "aspect-[3/4]",
-    mWrap: "",
-    pos: "object-center",
-    size: "(min-width:1024px) 49vw, 100vw",
-  },
-  {
-    col: "lg:col-span-4 lg:col-start-9",
-    ratio: "lg:aspect-[3/4]",
-    push: "lg:mt-20",
-    mFrame: "aspect-[4/5]",
-    mWrap: "ml-auto w-[78%] lg:w-full",
-    pos: "object-center",
-    size: "(min-width:1024px) 33vw, 78vw",
-  },
-  {
-    col: "lg:col-span-4",
-    ratio: "lg:aspect-[3/4]",
-    push: "",
-    mFrame: "aspect-[16/11]",
-    mWrap: "",
-    pos: "object-top lg:object-center",
-    size: "(min-width:1024px) 33vw, 100vw",
-  },
-  {
-    col: "lg:col-span-4 lg:col-start-8",
-    ratio: "lg:aspect-[4/5]",
-    push: "lg:mt-28",
-    mFrame: "aspect-[3/4]",
-    mWrap: "w-[70%] lg:w-full",
-    pos: "object-center",
-    size: "(min-width:1024px) 33vw, 70vw",
-  },
-  {
-    col: "lg:col-span-5 lg:col-start-2",
-    ratio: "lg:aspect-[4/5]",
-    push: "",
-    mFrame: "aspect-[5/4]",
-    mWrap: "",
-    pos: "object-center",
-    size: "(min-width:1024px) 41vw, 100vw",
-  },
-  {
-    col: "lg:col-span-3 lg:col-start-10",
-    ratio: "lg:aspect-[3/4]",
-    push: "lg:mt-24",
-    mFrame: "aspect-square",
-    mWrap: "ml-auto w-[82%] lg:w-full",
-    pos: "object-center",
-    size: "(min-width:1024px) 25vw, 82vw",
-  },
-  {
-    col: "lg:col-span-7 lg:col-start-4",
-    ratio: "lg:aspect-[4/3]",
-    push: "",
-    mFrame: "aspect-[16/10]",
-    mWrap: "",
-    pos: "object-center",
-    size: "(min-width:1024px) 58vw, 100vw",
-  },
-];
 
-const blocks = [
-  [0, 1],
-  [2, 3],
-  [4, 5],
-  [6],
+/* Pierwszy kafel zajmuje dwie kolumny i w obu układach ma własne proporcje. */
+const KAFLE = [
+  { span: "col-span-2", ratio: "aspect-[16/10] lg:aspect-[8/3]", sizes: "(min-width:1024px) 50vw, 100vw" },
+  { span: "", ratio: "aspect-[3/4] lg:aspect-[4/3]", sizes: "(min-width:1024px) 25vw, 50vw" },
+  { span: "", ratio: "aspect-[3/4] lg:aspect-[4/3]", sizes: "(min-width:1024px) 25vw, 50vw" },
+  { span: "", ratio: "aspect-[3/4] lg:aspect-[4/3]", sizes: "(min-width:1024px) 25vw, 50vw" },
+  { span: "", ratio: "aspect-[3/4] lg:aspect-[4/3]", sizes: "(min-width:1024px) 25vw, 50vw" },
+  { span: "", ratio: "aspect-[3/4] lg:aspect-[4/3]", sizes: "(min-width:1024px) 25vw, 50vw" },
+  { span: "", ratio: "aspect-[3/4] lg:aspect-[4/3]", sizes: "(min-width:1024px) 25vw, 50vw" },
 ];
 
 export function Realizacje() {
   const [open, setOpen] = useState<Project | null>(null);
+  const root = useRef<HTMLElement>(null);
+
+  useGsap(root, () => {
+    gsap.fromTo(
+      ".kafel",
+      { opacity: 0, y: 24 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        stagger: 0.05,
+        ease: "expo.out",
+        scrollTrigger: { trigger: ".siatka", start: "top 85%" },
+      },
+    );
+  });
 
   return (
-    <section id="realizacje" className="gut scroll-mt-20 py-[clamp(4rem,7.5vw,6.25rem)]">
+    <section
+      id="realizacje"
+      ref={root}
+      className="gut scroll-mt-20 py-[clamp(3.5rem,6.5vw,5.5rem)]"
+    >
       <SectionHead
         label="Realizacje"
         lines={["Zobacz nasze", "realizacje."]}
-        lead={
-          <>
-            Wybór budów z naszej dokumentacji. Kliknij, żeby zobaczyć
-            więcej zdjęć z danej realizacji.
-          </>
-        }
+        lead={<>Wybór budów z naszej dokumentacji.</>}
       />
 
-      <div className="mt-[clamp(2rem,4vw,3rem)] flex flex-col gap-[clamp(2rem,4.5vw,3.5rem)]">
-        {blocks.map((block, bi) => (
-          <div key={bi} className="grid gap-x-8 gap-y-[clamp(2rem,4.5vw,3.5rem)] lg:grid-cols-12">
-            {block.map((idx) => (
-              <Tile
-                key={projects[idx].id}
-                project={projects[idx]}
-                index={idx}
-                onOpen={() => setOpen(projects[idx])}
-              />
-            ))}
-          </div>
+      <div className="siatka mt-[clamp(1.75rem,3.5vw,2.75rem)] grid grid-cols-2 gap-[3px] lg:grid-cols-4">
+        {projects.map((p, i) => (
+          <Kafel key={p.id} project={p} cfg={KAFLE[i]} onOpen={() => setOpen(p)} />
         ))}
       </div>
 
@@ -123,118 +69,53 @@ export function Realizacje() {
   );
 }
 
-function Tile({
+function Kafel({
   project,
-  index,
+  cfg,
   onOpen,
 }: {
   project: Project;
-  index: number;
+  cfg: (typeof KAFLE)[number];
   onOpen: () => void;
 }) {
-  const root = useRef<HTMLDivElement>(null);
-  const cfg = layout[index];
-
-
-  useGsap(root, () => {
-    /* Odsłonięcie kadru maską — obraz wychodzi spod krawędzi. */
-    gsap.fromTo(
-      root.current!.querySelector(".tile-clip"),
-      { clipPath: "inset(0% 0% 100% 0%)" },
-      {
-        clipPath: "inset(0% 0% 0% 0%)",
-        duration: 1.4,
-        ease: "expo.out",
-        scrollTrigger: { trigger: root.current, start: "top 85%" },
-      },
-    );
-    gsap.fromTo(
-      root.current!.querySelector(".tile-img"),
-      { scale: 1.18 },
-      {
-        scale: 1,
-        duration: 1.6,
-        ease: "expo.out",
-        scrollTrigger: { trigger: root.current, start: "top 85%" },
-      },
-    );
-    gsap.fromTo(
-      root.current!.querySelectorAll(".tile-meta > *"),
-      { opacity: 0, y: 14 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.9,
-        stagger: 0.07,
-        ease: "expo.out",
-        scrollTrigger: { trigger: root.current, start: "top 82%" },
-      },
-    );
-
-    /* Delikatna paralaksa wnętrza kadru — tylko na dużych ekranach. */
-    ScrollParallax(root.current!);
-  });
+  const foto = project.photos[0];
 
   return (
-    <div ref={root} className={`${cfg.col} ${cfg.push}`}>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="group block w-full cursor-pointer text-left"
-      >
-        {/* Wcięcie dotyczy samego kadru — podpis zostaje na siatce strony,
-              więc tytuły nie łamią się w wąskiej kolumnie. */}
-        <div
-          className={`tile-clip relative overflow-hidden bg-bone-2 ${cfg.mFrame} ${cfg.ratio} ${cfg.mWrap}`}
-        >
-          {/* Dwie warstwy ruchu: GSAP posiada transform warstwy .tile-img
-              (wejście + paralaksa), CSS posiada transform warstwy .tile-hover. */}
-          <div className="tile-img absolute inset-x-0 -top-[5%] -bottom-[5%]">
-            <div className="tile-hover absolute inset-0 transition-transform duration-[900ms] ease-[var(--ease-out-quint)] group-hover:scale-[1.045]">
-              <Image
-                src={project.photos[0].src}
-                alt={project.photos[0].alt}
-                fill
-                sizes={cfg.size}
-                className={`object-cover ${cfg.pos}`}
-              />
-            </div>
-          </div>
-          {/* Na dotyku strzałka jest widoczna od razu — nie ma tu najechania. */}
-          <span className="absolute right-0 bottom-0 flex h-11 w-11 items-center justify-center bg-yellow transition-opacity duration-400 sm:h-12 sm:w-12 lg:opacity-0 lg:group-hover:opacity-100">
-            <svg viewBox="0 0 24 12" fill="none" className="w-5 text-graphite" aria-hidden="true">
-              <path d="M0 6h22M17 1l5 5-5 5" stroke="currentColor" strokeWidth="1.6" />
-            </svg>
-          </span>
-        </div>
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`kafel anim-hide group relative block overflow-hidden bg-graphite text-left ${cfg.span} ${cfg.ratio}`}
+    >
+      <Image
+        src={foto.src}
+        alt={foto.alt}
+        fill
+        sizes={cfg.sizes}
+        placeholder="blur"
+        blurDataURL={blurFor(foto.src)}
+        className="object-cover object-center brightness-[0.82] transition-[transform,filter] duration-[700ms] ease-[var(--ease-out-quint)] group-hover:scale-[1.04] group-hover:brightness-100"
+      />
 
-        <div className="tile-meta mt-4 flex items-start justify-between gap-5">
-          <div className="min-w-0">
-            <h3 className="hyphens-auto break-words text-[clamp(1.15rem,2.2vw,1.55rem)] tracking-[-0.03em]">
-              {project.title}
-            </h3>
-            <p className="mt-2 text-sm text-grey">{project.type}</p>
-            <span className="mt-3 block h-px w-0 bg-graphite transition-[width] duration-[700ms] ease-[var(--ease-out-quint)] group-hover:w-full" />
-          </div>
-          <span className="eyebrow shrink-0 pt-1.5 tabular-nums text-grey">
-            {String(project.photos.length).padStart(2, "0")} zdj.
-          </span>
-        </div>
-      </button>
-    </div>
-  );
-}
+      {/* Przyciemnienie tylko u dołu — tam, gdzie stoi tekst. */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 bg-[linear-gradient(to_top,rgba(14,15,14,0.85)_0%,rgba(14,15,14,0.25)_45%,rgba(14,15,14,0)_75%)]"
+      />
 
-/** Paralaksa obrazu wewnątrz kadru. Właścicielem `y` jest wyłącznie ta funkcja. */
-function ScrollParallax(el: HTMLElement) {
-  if (window.matchMedia("(max-width: 1023px)").matches) return;
-  gsap.fromTo(
-    el.querySelector(".tile-img"),
-    { yPercent: -3.5 },
-    {
-      yPercent: 3.5,
-      ease: "none",
-      scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
-    },
+      {/* Strzałka siedzi w narożniku, żeby nigdy nie wchodziła w tytuł —
+          przy dłuższych nazwach na wąskim kaflu kolidowała z tekstem. */}
+      <span className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center bg-yellow transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100">
+        <svg viewBox="0 0 24 12" fill="none" className="w-4 text-graphite" aria-hidden="true">
+          <path d="M0 6h22M17 1l5 5-5 5" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      </span>
+
+      <span className="absolute inset-x-0 bottom-0 block p-3 sm:p-4">
+        <span className="eyebrow block text-yellow/90">{project.type}</span>
+        <span className="mt-1.5 block hyphens-auto break-words font-display text-[clamp(0.875rem,1.5vw,1.25rem)] leading-[1.12] font-extrabold tracking-[-0.025em] text-bone uppercase">
+          {project.short ?? project.title}
+        </span>
+      </span>
+    </button>
   );
 }

@@ -34,6 +34,8 @@ export const nav = [
 export type Project = {
   id: string;
   title: string;
+  /** Krótsza etykieta na kafel siatki, gdy pełna nazwa jest za długa. */
+  short?: string;
   type: string;
   photos: { src: string; alt: string }[];
 };
@@ -84,6 +86,7 @@ export const projects: Project[] = [
   {
     id: "obiekt-kubaturowy",
     title: "Budynek dwukondygnacyjny",
+    short: "Budynek 2-kondygnacyjny",
     type: "Obiekt kubaturowy",
     photos: [
       { src: `${IMG}/bud13.jpg`, alt: "Budynek dwukondygnacyjny w stanie surowym, rusztowanie na elewacji" },
@@ -94,6 +97,7 @@ export const projects: Project[] = [
   {
     id: "wiezba",
     title: "Więźba i stropy drewniane",
+    short: "Więźba i stropy",
     type: "Dach i stropy",
     photos: [
       { src: `${IMG}/bud18.jpg`, alt: "Pomieszczenie z odsłoniętą więźbą dachową" },
@@ -235,56 +239,6 @@ export const mapLinkUrl = `https://www.google.com/maps/search/?api=1&query=${enc
 )}`;
 
 /* ------------------------------------------------------------------ *
- * Opinie klientów.
- *
- * UWAGA: firma nie dostarczyła prawdziwych opinii. Poniższe wpisy to
- * materiał poglądowy do prezentacji układu sekcji. Nie pochodzą z Google,
- * nie mają autorów ani ocen. Przed publikacją produkcyjną ustaw
- * SHOW_DEMO_REVIEWS na false albo podmień treści na zweryfikowane opinie.
- * ------------------------------------------------------------------ */
-export const SHOW_DEMO_REVIEWS = true;
-
-export type DemoReview = {
-  label: string;
-  text: string;
-};
-
-export const demoReviews: DemoReview[] = [
-  {
-    label: "Opinia przykładowa 01",
-    text: "Termin dotrzymany, plac budowy uporządkowany po każdym etapie robót.",
-  },
-  {
-    label: "Opinia przykładowa 02",
-    text: "Wycena była czytelna. Zakres prac ustalony przed startem i bez zmian w trakcie.",
-  },
-  {
-    label: "Opinia przykładowa 03",
-    text: "Stan surowy zamknięty oddany zgodnie z projektem. Kontakt na bieżąco.",
-  },
-  {
-    label: "Opinia przykładowa 04",
-    text: "Więźba i pokrycie zrobione solidnie. Obróbki blacharskie dopracowane.",
-  },
-  {
-    label: "Opinia przykładowa 05",
-    text: "Roboty ziemne poszły sprawnie mimo pogody. Ekipa punktualna.",
-  },
-  {
-    label: "Opinia przykładowa 06",
-    text: "Dobra komunikacja na każdym etapie. Wszystkie ustalenia na piśmie.",
-  },
-  {
-    label: "Opinia przykładowa 07",
-    text: "Hala stalowa zmontowana w zapowiedzianym terminie.",
-  },
-  {
-    label: "Opinia przykładowa 08",
-    text: "Porządek na budowie i jasne rozliczenie materiałów.",
-  },
-];
-
-/* ------------------------------------------------------------------ *
  * Zapytanie o wycenę. Formularz żyje w modalu, nie na osobnej stronie.
  * ------------------------------------------------------------------ */
 
@@ -319,19 +273,3 @@ export const wiekszeInwestycje = [
   { nr: "03", label: "Prace w ramach przetargów" },
   { nr: "04", label: "Od prac ziemnych po dach" },
 ] as const;
-
-/* ------------------------------------------------------------------ *
- * Pasek zaufania pod hero.
- *
- * UWAGA: firma nie dostarczyła jeszcze zebranych opinii, więc ocena jest
- * materiałem poglądowym i chodzi pod tą samą flagą co sekcja opinii.
- * Przed publikacją produkcyjną: podmienić na realną ocenę (np. z wizytówki
- * Google) albo zostawić wyłączone.
- * ------------------------------------------------------------------ */
-export const ocena = {
-  wartosc: "5,0",
-  max: "5,0",
-  gwiazdki: 5,
-  naglowek: "Rzetelność, jakość wykonania i terminowość",
-  wsparcie: "Klienci doceniają jakość realizacji i sprawną współpracę.",
-} as const;
