@@ -116,15 +116,34 @@ export function Lightbox({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
+        {/* Wszystkie zdjęcia projektu są w DOM od razu i tylko się
+            przenikają. Wcześniej `key` wymuszał remount <Image>, więc każde
+            przełączenie zaczynało pobieranie od zera i pokazywało czarne tło
+            kontenera. Teraz sąsiednie kadry są już wczytane, a zmiana jest
+            natychmiastowa. */}
         <div className="relative h-full w-full">
-          <Image
-            key={photo.src}
-            src={photo.src}
-            alt={photo.alt}
-            fill
-            sizes="100vw"
-            className="animate-[lbin_.5s_var(--ease-out-quint)] object-contain"
-          />
+          {project.photos.map((p, k) => {
+            const aktywne = k === i;
+            /* Pobieramy z wyprzedzeniem bieżące i oba sąsiednie kadry. */
+            const blisko =
+              Math.min(
+                Math.abs(k - i),
+                project.photos.length - Math.abs(k - i),
+              ) <= 1;
+            return (
+              <Image
+                key={p.src}
+                src={p.src}
+                alt={aktywne ? p.alt : ""}
+                fill
+                sizes="100vw"
+                priority={blisko}
+                aria-hidden={!aktywne}
+                className="object-contain transition-opacity duration-300 ease-[var(--ease-out-quint)]"
+                style={{ opacity: aktywne ? 1 : 0 }}
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -153,7 +172,6 @@ export function Lightbox({
         </div>
       </div>
 
-      <style>{`@keyframes lbin { from { opacity: 0; transform: scale(1.015); } to { opacity: 1; transform: none; } }`}</style>
     </div>
   );
 }

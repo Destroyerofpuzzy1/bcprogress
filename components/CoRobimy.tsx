@@ -78,6 +78,65 @@ export function CoRobimy() {
     return () => ro.disconnect();
   }, [active]);
 
+  /**
+   * Telefon: aktywna pozycja idzie za scrollem.
+   *
+   * Kadr jest przyklejony pod nagłówkiem, więc szukamy wiersza, którego
+   * środek jest najbliżej linii pod nim. Dzięki temu przewijanie listy samo
+   * przełącza zdjęcia i nic nie trzeba klikać. Tapnięcie nadal działa —
+   * po prostu trzyma się do następnego ruchu strony.
+   *
+   * Na desktopie nie robimy nic: tam wybór należy do kliknięcia.
+   */
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    let frame = 0;
+
+    const czytaj = () => {
+      frame = 0;
+      const sekcja = root.current;
+      if (!sekcja) return;
+
+      /* Poza ekranem nie ma czego synchronizować. */
+      const r = sekcja.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+
+      const linia = window.innerHeight * 0.68;
+      let najlepszy = 0;
+      let najblizej = Infinity;
+
+      rows.current.forEach((row, i) => {
+        if (!row) return;
+        const b = row.getBoundingClientRect();
+        const dystans = Math.abs(b.top + b.height / 2 - linia);
+        if (dystans < najblizej) {
+          najblizej = dystans;
+          najlepszy = i;
+        }
+      });
+
+      setActive((a) => (a === najlepszy ? a : najlepszy));
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(czytaj);
+    };
+
+    const wlacz = () => {
+      window.removeEventListener("scroll", onScroll);
+      if (mq.matches) return;
+      window.addEventListener("scroll", onScroll, { passive: true });
+    };
+
+    wlacz();
+    mq.addEventListener("change", wlacz);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      mq.removeEventListener("change", wlacz);
+    };
+  }, []);
+
   /* Podmiana kadru maską w bok. Właścicielem `clipPath` warstw jest tylko
      ten efekt. */
   useEffect(() => {

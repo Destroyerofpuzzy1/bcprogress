@@ -306,3 +306,32 @@ export const uploadLimits = {
   accept: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
   acceptAttr: ".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf",
 } as const;
+
+/* ------------------------------------------------------------------ *
+ * Większe inwestycje.
+ *
+ * Punkty opisują ZAKRES prac, a nie jakość — jedynym twardym dowodem jest
+ * publicznie potwierdzony kontrakt MZWiK, do którego sekcja linkuje.
+ * ------------------------------------------------------------------ */
+export const wiekszeInwestycje = [
+  { nr: "01", label: "Większe zakresy robót" },
+  { nr: "02", label: "Obiekty użytkowe i instytucjonalne" },
+  { nr: "03", label: "Prace w ramach przetargów" },
+  { nr: "04", label: "Od prac ziemnych po dach" },
+] as const;
+
+/* ------------------------------------------------------------------ *
+ * Pasek zaufania pod hero.
+ *
+ * UWAGA: firma nie dostarczyła jeszcze zebranych opinii, więc ocena jest
+ * materiałem poglądowym i chodzi pod tą samą flagą co sekcja opinii.
+ * Przed publikacją produkcyjną: podmienić na realną ocenę (np. z wizytówki
+ * Google) albo zostawić wyłączone.
+ * ------------------------------------------------------------------ */
+export const ocena = {
+  wartosc: "5,0",
+  max: "5,0",
+  gwiazdki: 5,
+  naglowek: "Rzetelność, jakość wykonania i terminowość",
+  wsparcie: "Klienci doceniają jakość realizacji i sprawną współpracę.",
+} as const;
