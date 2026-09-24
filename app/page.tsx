@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Realizacje } from "@/components/Realizacje";
-import { NaBudowie } from "@/components/NaBudowie";
 import { CoRobimy } from "@/components/CoRobimy";
 import { Interlude } from "@/components/Interlude";
 import { OFirmie } from "@/components/OFirmie";
@@ -17,7 +16,6 @@ export default function Home() {
       <main>
         <Hero />
         <Realizacje />
-        <NaBudowie />
         <CoRobimy />
         <Interlude />
         <OFirmie />

@@ -61,6 +61,15 @@
   padding-inline: var(--spacing-gutter);
 }
 
+/* Wyjście kadru na pełną szerokość i powrót do siatki tekstu. */
+@utility -mx-gutter {
+  margin-inline: calc(var(--spacing-gutter) * -1);
+}
+
+@utility px-gutter {
+  padding-inline: var(--spacing-gutter);
+}
+
 /* ---- Editorial primitives -------------------------------------------- */
 
 /* Label / eyebrow: the only place tracking goes wide. */

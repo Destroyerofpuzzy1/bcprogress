@@ -1,49 +1,135 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { gsap, useGsap } from "@/lib/gsap";
+import { gsap, useGsap, reducedMotion } from "@/lib/gsap";
 import { SectionHead } from "./Section";
-import { services } from "@/lib/content";
+import { works } from "@/lib/content";
 
 /**
  * Zakres prac.
  *
- * Zdjęcie danej pozycji pojawia się w stałym kadrze obok listy — kadr nie
- * podąża za kursorem i nie nasłuchuje ruchu myszy. Na wskaźniku precyzyjnym
- * wybór zmienia najechanie lub fokus klawiaturą, na dotyku — tapnięcie,
- * które rozwija zdjęcie pod pozycją.
+ * Jedna sekcja zamiast dwóch powtarzających się: lista po lewej, duży kadr po
+ * prawej. Pozycję wybiera użytkownik kliknięciem, nic nie przewija się samo.
+ *
+ * Wysokość sekcji jest stała: kadr ma ustaloną proporcję, a blok opisu pod nim
+ * ma minimalną wysokość, więc zmiana pozycji nie przesuwa strony.
  */
 export function CoRobimy() {
   const root = useRef<HTMLElement>(null);
-  const [active, setActive] = useState(0);
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const list = useRef<HTMLOListElement>(null);
+  const rows = useRef<(HTMLLIElement | null)[]>([]);
+  const indicator = useRef<HTMLSpanElement>(null);
+  const layers = useRef<(HTMLDivElement | null)[]>([]);
+  const caption = useRef<HTMLDivElement>(null);
 
+  const [active, setActive] = useState(0);
+  const prev = useRef(0);
+
+  /* Wejście sekcji. */
   useGsap(root, () => {
     gsap.fromTo(
-      ".svc-row",
-      { opacity: 0, y: 26 },
+      ".work-row",
+      { opacity: 0, y: 22 },
       {
         opacity: 1,
         y: 0,
-        duration: 1,
-        stagger: 0.06,
+        duration: 0.9,
+        stagger: 0.05,
         ease: "expo.out",
-        scrollTrigger: { trigger: ".svc-list", start: "top 85%" },
+        scrollTrigger: { trigger: ".work-list", start: "top 85%" },
       },
     );
 
     gsap.fromTo(
-      ".svc-frame",
+      ".work-frame",
       { clipPath: "inset(0% 0% 100% 0%)" },
       {
         clipPath: "inset(0% 0% 0% 0%)",
         duration: 1.3,
         ease: "expo.out",
-        scrollTrigger: { trigger: ".svc-list", start: "top 85%" },
+        scrollTrigger: { trigger: ".work-frame", start: "top 88%" },
       },
     );
   });
+
+  /* Żółty wskaźnik jedzie do aktywnego wiersza. Jedyny właściciel jego
+     `y` i `height`. */
+  useEffect(() => {
+    const move = (instant = false) => {
+      const row = rows.current[active];
+      const bar = indicator.current;
+      const ol = list.current;
+      if (!row || !bar || !ol) return;
+      /* `ol` ma position: relative, więc jest offsetParentem wierszy i
+         `offsetTop` liczy się już względem niego. */
+      const y = row.offsetTop;
+      const h = row.offsetHeight;
+      if (instant || reducedMotion()) {
+        gsap.set(bar, { y, height: h });
+      } else {
+        gsap.to(bar, { y, height: h, duration: 0.55, ease: "expo.out" });
+      }
+    };
+
+    move();
+    const ro = new ResizeObserver(() => move(true));
+    if (list.current) ro.observe(list.current);
+    return () => ro.disconnect();
+  }, [active]);
+
+  /* Podmiana kadru maską w bok. Właścicielem `clipPath` warstw jest tylko
+     ten efekt. */
+  useEffect(() => {
+    const from = prev.current;
+    const to = active;
+    prev.current = to;
+    if (from === to) return;
+
+    const outEl = layers.current[from];
+    const inEl = layers.current[to];
+    if (!outEl || !inEl) return;
+
+    if (reducedMotion()) {
+      gsap.set(outEl, { clipPath: "inset(0 0 0 100%)", zIndex: 1 });
+      gsap.set(inEl, { clipPath: "inset(0 0 0 0%)", zIndex: 2 });
+      return;
+    }
+
+    const forward = to > from;
+    gsap.set(inEl, { zIndex: 2 });
+    gsap.set(outEl, { zIndex: 1 });
+
+    gsap
+      .timeline({ defaults: { ease: "expo.inOut" } })
+      .fromTo(
+        inEl,
+        { clipPath: forward ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)" },
+        { clipPath: "inset(0 0 0 0%)", duration: 1 },
+        0,
+      )
+      .fromTo(
+        inEl.querySelector(".work-img"),
+        { scale: 1.12 },
+        { scale: 1, duration: 1.35, ease: "expo.out" },
+        0,
+      )
+      .to(
+        outEl,
+        { clipPath: forward ? "inset(0 100% 0 0)" : "inset(0 0 0 100%)", duration: 1 },
+        0,
+      );
+
+    if (caption.current) {
+      gsap.fromTo(
+        caption.current.querySelectorAll(".work-cap"),
+        { yPercent: 110 },
+        { yPercent: 0, duration: 0.85, stagger: 0.05, ease: "expo.out" },
+      );
+    }
+  }, [active]);
+
+  const current = works[active];
 
   return (
     <section
@@ -56,101 +142,124 @@ export function CoRobimy() {
         lines={["Co robimy."]}
         lead={
           <>
-            Zakres prac przy konkretnej inwestycji ustalamy i potwierdzamy na
-            etapie wyceny.
+            Zakres prac przy konkretnej inwestycji ustalamy przy wycenie.
+            Zdjęcia pochodzą z różnych budów.
           </>
         }
       />
 
-      <div className="mt-[clamp(2rem,4.5vw,3.25rem)] grid gap-x-8 lg:grid-cols-12">
-        {/* Lista */}
-        <ol className="svc-list lg:col-span-7">
-          {services.map((s, i) => {
-            const open = openIdx === i;
-            return (
-              <li key={s.title} className="svc-row anim-hide spine">
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  onClick={() => {
-                    setActive(i);
-                    setOpenIdx(open ? null : i);
-                  }}
-                  onMouseEnter={() => setActive(i)}
-                  onFocus={() => setActive(i)}
-                  className="group grid w-full grid-cols-[auto_1fr] items-baseline gap-x-5 py-[clamp(1.1rem,2.2vw,1.6rem)] text-left sm:gap-x-8"
-                >
-                  <span
-                    className={[
-                      "eyebrow pt-1.5 tabular-nums transition-colors duration-300 sm:pt-2",
-                      active === i ? "text-yellow" : "text-grey",
-                    ].join(" ")}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-
-                  <h3
-                    className={[
-                      "text-[clamp(1.5rem,4vw,2.6rem)] transition-[color,transform] duration-[600ms] ease-[var(--ease-out-quint)] group-hover:text-graphite sm:group-hover:translate-x-3",
-                      active === i ? "text-graphite" : "text-graphite/45",
-                    ].join(" ")}
-                  >
-                    {s.title}
-                  </h3>
-
-                  <p className="col-start-2 mt-2 text-sm text-grey">
-                    {s.note}
-                  </p>
-
-                  {/* Dotyk: zdjęcie rozwija się pod pozycją. */}
-                  <span
-                    className="col-span-full grid transition-[grid-template-rows] duration-[700ms] ease-[var(--ease-out-quint)] lg:hidden"
-                    style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-                  >
-                    <span className="block overflow-hidden">
-                      <span className="relative mt-4 block aspect-[16/10] w-full overflow-hidden bg-bone-2">
-                        <Image
-                          src={s.photo.src}
-                          alt={s.photo.alt}
-                          fill
-                          sizes="(min-width:640px) 640px, 100vw"
-                          className="object-cover"
-                        />
-                      </span>
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-          <li className="spine" />
-        </ol>
-
-        {/* Stały kadr — zmienia się tylko zawartość, nigdy pozycja. */}
-        <div className="hidden lg:col-span-4 lg:col-start-9 lg:block lg:self-center">
-          <div className="svc-frame relative aspect-[4/5] w-full overflow-hidden bg-bone-2">
-            {services.map((s, i) => (
+      <div className="mt-[clamp(2rem,4.5vw,3.25rem)] grid gap-x-8 gap-y-8 lg:grid-cols-12">
+        {/* Kadr. Na telefonie stoi nad listą. */}
+        <div
+          className="sticky top-[76px] z-10 -mx-gutter bg-bone px-gutter pb-4 lg:static lg:z-auto lg:mx-0 lg:px-0 lg:pb-0 lg:col-span-7 lg:col-start-6 lg:row-start-1"
+        >
+          <div className="work-frame relative aspect-[16/10] w-full overflow-hidden bg-graphite sm:aspect-[4/3]">
+            {works.map((w, i) => (
               <div
-                key={s.title}
+                key={w.no}
+                ref={(el) => {
+                  layers.current[i] = el;
+                }}
                 aria-hidden={i !== active}
-                className="absolute inset-0 transition-opacity duration-[600ms] ease-[var(--ease-out-quint)]"
-                style={{ opacity: i === active ? 1 : 0 }}
+                className="absolute inset-0"
+                style={{
+                  clipPath: i === 0 ? "inset(0 0 0 0%)" : "inset(0 0 0 100%)",
+                  zIndex: i === 0 ? 2 : 1,
+                }}
               >
-                <Image
-                  src={s.photo.src}
-                  alt={i === active ? s.photo.alt : ""}
-                  fill
-                  sizes="(min-width:1024px) 33vw, 0px"
-                  className="object-cover"
-                />
+                <div className="work-img absolute inset-0">
+                  <Image
+                    src={w.photo.src}
+                    alt={i === active ? w.photo.alt : ""}
+                    fill
+                    sizes="(min-width:1024px) 58vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
               </div>
             ))}
-            <span className="absolute bottom-0 left-0 bg-yellow px-4 py-2 eyebrow text-graphite tabular-nums">
-              {String(active + 1).padStart(2, "0")}
+
+            <span className="pointer-events-none absolute bottom-0 left-0 z-10 bg-yellow px-4 pt-1.5 pb-1 font-display text-[clamp(1.6rem,3.4vw,2.5rem)] leading-none font-extrabold tracking-[-0.05em] text-graphite tabular-nums">
+              {current.no}
             </span>
           </div>
 
-          <p className="mt-4 text-sm text-grey">{services[active].photo.alt}</p>
+          {/* Stała wysokość, żeby zmiana opisu nie ruszała układu. */}
+          <div
+            ref={caption}
+            className="mt-4 flex min-h-[3.25rem] flex-col gap-1 sm:min-h-[3rem]"
+          >
+            <span className="block overflow-hidden pb-0.5">
+              <span className="work-cap block font-display text-[1.0625rem] font-extrabold tracking-[-0.02em] uppercase">
+                {current.title}
+              </span>
+            </span>
+            <span className="block overflow-hidden pb-0.5">
+              <span className="work-cap block text-sm text-grey">
+                {current.note}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        {/* Lista */}
+        <div className="lg:col-span-5 lg:col-start-1 lg:row-start-1 lg:self-center">
+          <ol ref={list} className="work-list relative">
+            {/* Cienki żółty wskaźnik aktywnej pozycji. */}
+            <span
+              ref={indicator}
+              aria-hidden="true"
+              className="absolute top-0 left-0 z-10 w-[2px] bg-yellow"
+            />
+
+            {works.map((w, i) => {
+              const on = i === active;
+              return (
+                <li
+                  key={w.no}
+                  ref={(el) => {
+                    rows.current[i] = el;
+                  }}
+                  className="work-row anim-hide spine"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-current={on ? "true" : undefined}
+                    className="group flex w-full items-baseline gap-4 py-[clamp(1.05rem,3.2vw,1.15rem)] pl-5 text-left sm:gap-6"
+                  >
+                    <span
+                      className={[
+                        "eyebrow shrink-0 tabular-nums transition-colors duration-300",
+                        on ? "text-yellow" : "text-grey",
+                      ].join(" ")}
+                    >
+                      {w.no}
+                    </span>
+
+                    <span
+                      className={[
+                        "font-display text-[clamp(1.2rem,2.6vw,1.9rem)] font-extrabold tracking-[-0.035em] uppercase transition-colors duration-300",
+                        on
+                          ? "text-graphite"
+                          : "text-graphite/40 group-hover:text-graphite/75",
+                      ].join(" ")}
+                    >
+                      {w.title}
+                    </span>
+
+                    <span
+                      className={[
+                        "ml-auto h-px shrink-0 self-center bg-graphite/30 transition-[width] duration-[600ms] ease-[var(--ease-out-quint)]",
+                        on ? "w-0" : "w-0 group-hover:w-5",
+                      ].join(" ")}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+            <li className="spine" />
+          </ol>
         </div>
       </div>
     </section>

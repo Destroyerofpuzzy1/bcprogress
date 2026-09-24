@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SectionHead, Reveal } from "./Section";
 import { company, contracts } from "@/lib/content";
 
@@ -48,6 +49,22 @@ export function OFirmie() {
               <path d="M1 11L11 1M4 1h7v7" stroke="currentColor" strokeWidth="1.4" />
             </svg>
           </a>
+        </Reveal>
+
+        {/* Zdjęcie tylko na telefonie: rozbija blok danych i daje sekcji
+            oddech tam, gdzie kolumny układają się jedna pod drugą. */}
+        <Reveal className="lg:hidden" delay={0.05}>
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-bone-2">
+            <Image
+              src="/assets/bc-progres/img/bud5.jpg"
+              alt="Hak dźwigu i koparka na placu budowy"
+              fill
+              /* Kadr istnieje tylko poniżej `lg`, więc desktop nie ma po co
+                 pobierać dużego pliku. */
+              sizes="(min-width: 1024px) 1px, 100vw"
+              className="object-cover object-center"
+            />
+          </div>
         </Reveal>
 
         {/* Kontrakty potwierdzone publicznie */}
