@@ -20,7 +20,7 @@ export default function Polityka() {
     <>
       <header className="bg-graphite">
         <div className="gut flex h-[68px] items-center justify-between">
-          <Link href="/" aria-label="BC PROGRES — strona główna">
+          <Link href="/" aria-label="Strona główna BC PROGRES">
             <Logo tone="light" className="w-[180px]" />
           </Link>
           <Link
@@ -42,8 +42,8 @@ export default function Polityka() {
           <p className="max-w-[70ch] text-sm leading-relaxed">
             <strong>Do zatwierdzenia.</strong> Dokument opisuje tylko te procesy,
             które strona realizuje w obecnej wersji. Przed publikacją wymaga
-            sprawdzenia przez firmę i — jeśli to konieczne — prawnika, oraz
-            uzupełnienia o dane kontaktowe administratora.
+            sprawdzenia przez firmę, w razie potrzeby także przez prawnika,
+            oraz uzupełnienia o dane kontaktowe administratora.
           </p>
         </div>
 
@@ -63,8 +63,14 @@ export default function Polityka() {
 
             <Article title="Jakie dane zbieramy">
               <p>
-                Wyłącznie te, które wpiszesz w formularzu kontaktowym: imię,
-                numer telefonu, rodzaj inwestycji i treść wiadomości.
+                Wyłącznie te, które podasz w formularzu wyceny: rodzaj
+                inwestycji, miejscowość, opis inwestycji, imię, numer telefonu
+                oraz adres e-mail, jeśli go wpiszesz.
+              </p>
+              <p>
+                Jeśli dołączysz zdjęcia albo projekt, trafiają one razem z
+                zapytaniem na skrzynkę firmy. Nie zapisujemy ich na serwerze
+                strony i nie publikujemy ich nigdzie.
               </p>
               <p>
                 Strona nie korzysta z narzędzi analitycznych, nie wyświetla
@@ -83,16 +89,16 @@ export default function Polityka() {
             <Article title="Jak długo je przechowujemy">
               <p>
                 Do czasu zakończenia rozmowy o inwestycji, a następnie przez
-                okres wymagany przepisami — albo do momentu, w którym poprosisz
+                okres wymagany przepisami albo do momentu, w którym poprosisz
                 o ich usunięcie.
               </p>
             </Article>
 
             <Article title="Komu je przekazujemy">
               <p>
-                Dostawcy hostingu strony oraz — po podłączeniu — dostawcy usługi
-                poczty e-mail, który dostarcza wiadomość z formularza do naszej
-                skrzynki. Nie sprzedajemy danych i nie przekazujemy ich do celów
+                Dostawcy hostingu strony oraz, po podłączeniu, dostawcy usługi
+                poczty e-mail, który dostarcza wiadomość z formularza wraz z
+                załącznikami do naszej skrzynki. Nie sprzedajemy danych i nie przekazujemy ich do celów
                 marketingowych.
               </p>
               <p className="text-grey">

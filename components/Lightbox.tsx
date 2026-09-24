@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useWycena } from "@/components/wycena/WycenaProvider";
 import type { Project } from "@/lib/content";
 
 export function Lightbox({
@@ -11,6 +12,7 @@ export function Lightbox({
   project: Project | null;
   onClose: () => void;
 }) {
+  const { otworz } = useWycena();
   const [i, setI] = useState(0);
   const panel = useRef<HTMLDivElement>(null);
 
@@ -40,6 +42,25 @@ export function Lightbox({
     };
   }, [project, go, onClose]);
 
+  /* Przesunięcie palcem w poziomie przełącza zdjęcie. Nie wołamy
+     preventDefault, więc pionowe gesty zachowują się normalnie. */
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.changedTouches[0];
+    touch.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touch.current;
+    touch.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      go(dx < 0 ? 1 : -1);
+    }
+  };
+
   if (!project) return null;
   const photo = project.photos[i];
 
@@ -62,19 +83,39 @@ export function Lightbox({
             {project.title}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="-mt-1 flex h-11 w-11 shrink-0 items-center justify-center border border-bone/25 text-bone transition-colors hover:border-bone hover:bg-bone hover:text-graphite"
-        >
-          <span className="sr-only">Zamknij</span>
-          <svg viewBox="0 0 16 16" className="w-4" aria-hidden="true">
-            <path d="M1 1l14 14M15 1L1 15" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          {/* Pytanie o podobną realizację przenosi jej nazwę do formularza. */}
+          <button
+            type="button"
+            /* Najpierw zamykamy podgląd, potem otwieramy modal — dwie blokady
+               przewijania nie nakładają się wtedy na siebie. */
+            onClick={() => {
+              const tytul = project.title;
+              onClose();
+              otworz(tytul);
+            }}
+            className="hidden items-center gap-3 bg-yellow px-5 py-3.5 text-[11px] font-bold tracking-[0.14em] text-graphite uppercase transition-transform duration-300 ease-[var(--ease-out-quint)] hover:-translate-y-0.5 sm:inline-flex"
+          >
+            Zapytaj o podobną realizację
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-12 w-12 shrink-0 items-center justify-center border border-bone/25 text-bone transition-colors hover:border-bone hover:bg-bone hover:text-graphite"
+          >
+            <span className="sr-only">Zamknij</span>
+            <svg viewBox="0 0 16 16" className="w-4" aria-hidden="true">
+              <path d="M1 1l14 14M15 1L1 15" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="gut relative min-h-0 flex-1 pb-4">
+      <div
+        className="gut relative min-h-0 flex-1 pb-4"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="relative h-full w-full">
           <Image
             key={photo.src}
@@ -88,7 +129,19 @@ export function Lightbox({
       </div>
 
       <div className="gut spine-dark flex items-center justify-between py-5">
-        <p className="max-w-[46ch] text-sm text-bone/60">{photo.alt}</p>
+        <p className="hidden max-w-[46ch] text-sm text-bone/60 sm:block">{photo.alt}</p>
+        {/* Na telefonie to samo CTA, ale w stopce, gdzie jest na nie miejsce. */}
+        <button
+          type="button"
+          onClick={() => {
+            const tytul = project.title;
+            onClose();
+            otworz(tytul);
+          }}
+          className="bg-yellow px-4 py-3 text-[11px] font-bold tracking-[0.12em] text-graphite uppercase sm:hidden"
+        >
+          Zapytaj o wycenę
+        </button>
         <div className="flex shrink-0 items-center gap-5">
           <span className="eyebrow tabular-nums text-bone/60">
             {String(i + 1).padStart(2, "0")} / {String(project.photos.length).padStart(2, "0")}
@@ -118,7 +171,7 @@ function NavBtn({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-11 w-12 items-center justify-center border border-bone/25 text-bone transition-colors hover:border-yellow hover:bg-yellow hover:text-graphite"
+      className="flex h-12 w-14 items-center justify-center border border-bone/25 text-bone transition-colors hover:border-yellow hover:bg-yellow hover:text-graphite"
     >
       <span className="sr-only">{label}</span>
       <svg

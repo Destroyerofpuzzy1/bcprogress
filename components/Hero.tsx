@@ -1,11 +1,24 @@
 "use client";
 
-import { useRef } from "react";
-import { gsap, useGsap, LINE_FROM, LINE_TO } from "@/lib/gsap";
+import { useRef, useState } from "react";
+import { useWycena } from "@/components/wycena/WycenaProvider";
+import { gsap, useGsap, useIsoLayoutEffect, LINE_FROM, LINE_TO } from "@/lib/gsap";
 
 export function Hero() {
+  const { otworz } = useWycena();
   const root = useRef<HTMLElement>(null);
   const videoWrap = useRef<HTMLDivElement>(null);
+
+  /* Plakat musi pasować do kadru, który faktycznie się załaduje, inaczej
+     pierwsza klatka skacze. Ustawiamy go przed pierwszym malowaniem. */
+  const [poster, setPoster] = useState(
+    "/assets/bc-progres/img/hero-poster.jpg",
+  );
+  useIsoLayoutEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setPoster("/assets/bc-progres/img/hero-poster-mobile.jpg");
+    }
+  }, []);
 
   useGsap(root, () => {
     /* Wejście: kadr się otwiera, linie nagłówka wyjeżdżają spod maski. */
@@ -51,7 +64,7 @@ export function Hero() {
     <section
       id="gora"
       ref={root}
-      className="relative isolate flex h-[100svh] min-h-[560px] flex-col justify-end overflow-hidden bg-graphite"
+      className="relative isolate flex h-[100svh] max-h-[1000px] min-h-[540px] flex-col justify-end overflow-hidden bg-graphite"
     >
       <div ref={videoWrap} className="absolute inset-0 -z-10 will-change-transform">
         <video
@@ -61,12 +74,14 @@ export function Hero() {
           loop
           playsInline
           preload="auto"
-          poster="/assets/bc-progres/img/hero-poster.jpg"
+          poster={poster}
           aria-hidden="true"
           tabIndex={-1}
         >
+          {/* Telefon dostaje własny kadr 9:16 wycięty z ujęcia z drona —
+              wieża i budynek zostają w kadrze nad tekstem. */}
           <source
-            src="/assets/bc-progres/video/hero-854.mp4"
+            src="/assets/bc-progres/video/hero-mobile.mp4"
             type="video/mp4"
             media="(max-width: 767px)"
           />
@@ -77,10 +92,10 @@ export function Hero() {
       {/* Gradient tylko tam, gdzie stoi tekst — budynek zostaje odsłonięty. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgba(14,15,14,0.92)_0%,rgba(14,15,14,0.62)_30%,rgba(14,15,14,0.12)_58%,rgba(14,15,14,0.35)_100%)]"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgba(14,15,14,0.95)_0%,rgba(14,15,14,0.72)_26%,rgba(14,15,14,0.14)_56%,rgba(14,15,14,0.4)_100%)] sm:bg-[linear-gradient(to_top,rgba(14,15,14,0.92)_0%,rgba(14,15,14,0.62)_30%,rgba(14,15,14,0.12)_58%,rgba(14,15,14,0.35)_100%)]"
       />
 
-      <div className="gut relative pb-[clamp(2.25rem,6vh,4rem)]">
+      <div className="gut relative pb-[clamp(1.75rem,5vh,4rem)]">
         <p className="hero-eyebrow anim-hide eyebrow mb-6 translate-y-3 text-yellow">
           BC Progres <span className="mx-2 text-bone/40">/</span>
           <span className="text-bone/80">Firma budowlana</span>
@@ -114,18 +129,22 @@ export function Hero() {
               Zobacz realizacje
               <Arrow className="w-5 transition-transform duration-400 ease-[var(--ease-out-quint)] group-hover:translate-x-1.5" />
             </a>
-            <a
-              href="#kontakt"
+            <button
+              type="button"
+              onClick={() => otworz()}
               className="group inline-flex items-center justify-between gap-6 border border-bone/35 px-7 py-4.5 text-[12px] font-bold tracking-[0.16em] text-bone uppercase transition-colors duration-400 hover:border-bone hover:bg-bone hover:text-graphite"
             >
-              Zapytaj o wycenę
+              Poproś o wycenę
               <Arrow className="w-5 transition-transform duration-400 ease-[var(--ease-out-quint)] group-hover:translate-x-1.5" />
-            </a>
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="gut hero-scroll anim-hide relative translate-y-3 pb-6">
+      <div
+        className="gut hero-scroll anim-hide relative translate-y-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.25rem)" }}
+      >
         <div className="spine-dark flex items-center gap-3 pt-5">
           <span className="relative block h-9 w-px overflow-hidden bg-bone/25">
             <span className="absolute inset-x-0 top-0 block h-3 animate-[scrollcue_2.2s_ease-in-out_infinite] bg-yellow" />

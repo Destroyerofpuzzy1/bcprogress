@@ -7,6 +7,15 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
   gsap.defaults({ ease: "power3.out", duration: 0.9 });
+
+  /* ScrollTrigger mierzy stronę raz. Kiedy dojadą fonty albo zdjęcia, albo
+     telefon zmieni orientację, wysokości się przesuwają — bez odświeżenia
+     wyzwalacze odpalałyby w złych miejscach. */
+  const refresh = () => ScrollTrigger.refresh();
+
+  window.addEventListener("load", refresh);
+  window.addEventListener("orientationchange", () => setTimeout(refresh, 250));
+  document.fonts?.ready.then(refresh).catch(() => {});
 }
 
 export const useIsoLayoutEffect =

@@ -26,7 +26,7 @@ export const company = {
 
 export const nav = [
   { label: "Realizacje", href: "#realizacje" },
-  { label: "Zakres", href: "#zakres" },
+  { label: "Co robimy", href: "#zakres" },
   { label: "O firmie", href: "#o-firmie" },
   { label: "Kontakt", href: "#kontakt" },
 ] as const;
@@ -65,16 +65,16 @@ export const projects: Project[] = [
     title: "Dom w stanie surowym",
     type: "Budynek mieszkalny",
     photos: [
-      { src: `${IMG}/bud7.jpg`, alt: "Szczyt domu w rusztowaniu z widoczną konstrukcją dachu" },
+      { src: `${IMG}/bud7.jpg`, alt: "Szczyt domu w rusztowaniu z widoczną więźbą dachową" },
       { src: `${IMG}/bud8.jpg`, alt: "Dom z lukarnami i dachem z blachy, rusztowanie" },
       { src: `${IMG}/bud11.jpg`, alt: "Elewacja szczytowa domu w rusztowaniu" },
       { src: `${IMG}/bud9.jpg`, alt: "Dom w trakcie budowy, plac z silosem" },
     ],
   },
   {
-    id: "konstrukcja-stalowa",
-    title: "Konstrukcja stalowa",
-    type: "Obiekt / hala",
+    id: "obiekt-stalowy",
+    title: "Obiekt stalowy",
+    type: "Hala / wiata",
     photos: [
       { src: `${IMG}/bud19.jpg`, alt: "Stalowa rama portalowa w trakcie montażu" },
       { src: `${IMG}/bud21.jpg`, alt: "Szkielet stalowy obiektu na tle nieba" },
@@ -94,7 +94,7 @@ export const projects: Project[] = [
   {
     id: "wiezba",
     title: "Więźba i stropy drewniane",
-    type: "Konstrukcja dachu",
+    type: "Dach i stropy",
     photos: [
       { src: `${IMG}/bud18.jpg`, alt: "Pomieszczenie z odsłoniętą więźbą dachową" },
       { src: `${IMG}/bud16.jpg`, alt: "Więźba dachowa widziana od wewnątrz" },
@@ -114,52 +114,24 @@ export const projects: Project[] = [
   },
 ];
 
-/** Etapy robót. To sekwencja — dlatego numeracja jest tu uzasadniona.
- *  Zdjęcia pochodzą z różnych budów; strona mówi o tym wprost. */
-export type Stage = {
+/**
+ * Zakres prac.
+ *
+ * Jedna lista zamiast dwóch: dawne „Etapy robót" i „Zakres" powtarzały te same
+ * pozycje. Każdy wpis ma pokrycie w dostarczonej dokumentacji zdjęciowej.
+ * Numeracja porządkuje listę, nie opisuje przebiegu jednej budowy. Zdjęcia
+ * pochodzą z różnych realizacji i strona mówi o tym wprost.
+ */
+export type Work = {
   no: string;
   title: string;
-  caption: string;
+  note: string;
   photo: { src: string; alt: string };
 };
 
-export const stages: Stage[] = [
+export const works: Work[] = [
   {
     no: "01",
-    title: "Prace ziemne",
-    caption: "Przygotowanie terenu, wykopy, niwelacja.",
-    photo: { src: `${IMG}/bud6.jpg`, alt: "Koparka na nasypie ziemnym" },
-  },
-  {
-    no: "02",
-    title: "Fundamenty",
-    caption: "Zbrojenie, szalunki, beton.",
-    photo: { src: `${IMG}/bud3.jpg`, alt: "Zbrojenie ław fundamentowych w wykopie" },
-  },
-  {
-    no: "03",
-    title: "Mury i stropy",
-    caption: "Ściany, stropy żelbetowe, schody.",
-    photo: { src: `${IMG}/bud14.jpg`, alt: "Stemple podpierające strop żelbetowy" },
-  },
-  {
-    no: "04",
-    title: "Więźba",
-    caption: "Konstrukcja dachu i stropy drewniane.",
-    photo: { src: `${IMG}/bud16.jpg`, alt: "Drewniana więźba dachowa od wewnątrz" },
-  },
-  {
-    no: "05",
-    title: "Dach",
-    caption: "Pokrycie, obróbki, orynnowanie.",
-    photo: { src: `${IMG}/bud26.jpg`, alt: "Dach z blachy na rąbek stojący z rynnami" },
-  },
-];
-
-/** Zakres prac. Każda pozycja ma pokrycie w dostarczonej dokumentacji zdjęciowej
- *  albo w publicznie potwierdzonym kontrakcie. */
-export const services = [
-  {
     title: "Budowa domów",
     note: "Stan surowy otwarty i zamknięty.",
     photo: {
@@ -168,38 +140,61 @@ export const services = [
     },
   },
   {
-    title: "Roboty budowlane",
-    note: "Mury, stropy, schody, tynki.",
-    photo: {
-      src: `${IMG}/bud14.jpg`,
-      alt: "Stemple podpierające strop żelbetowy nad murowanymi ścianami",
-    },
-  },
-  {
-    title: "Konstrukcje dachowe",
-    note: "Więźba, pokrycie, obróbki blacharskie.",
-    photo: {
-      src: `${IMG}/bud16.jpg`,
-      alt: "Drewniana więźba dachowa widziana od wewnątrz",
-    },
-  },
-  {
-    title: "Konstrukcje stalowe",
-    note: "Montaż ram i obudowa obiektów.",
-    photo: {
-      src: `${IMG}/bud19.jpg`,
-      alt: "Montaż stalowej ramy portalowej",
-    },
-  },
-  {
+    no: "02",
     title: "Prace ziemne",
-    note: "Wykopy, niwelacja, fundamenty.",
+    note: "Przygotowanie terenu, wykopy, niwelacja.",
     photo: {
       src: `${IMG}/bud6.jpg`,
       alt: "Koparka podczas robót ziemnych na nasypie",
     },
   },
   {
+    no: "03",
+    title: "Fundamenty",
+    note: "Zbrojenie, szalunki, beton.",
+    photo: {
+      src: `${IMG}/bud3.jpg`,
+      alt: "Zbrojenie ław fundamentowych w wykopie",
+    },
+  },
+  {
+    no: "04",
+    title: "Mury i stropy",
+    note: "Ściany, stropy żelbetowe, schody.",
+    photo: {
+      src: `${IMG}/bud14.jpg`,
+      alt: "Stemple podpierające strop żelbetowy nad murowanymi ścianami",
+    },
+  },
+  {
+    no: "05",
+    title: "Więźba dachowa",
+    note: "Drewniana więźba i stropy.",
+    photo: {
+      src: `${IMG}/bud16.jpg`,
+      alt: "Drewniana więźba dachowa widziana od wewnątrz",
+    },
+  },
+  {
+    no: "06",
+    title: "Pokrycia dachowe",
+    note: "Blacha, obróbki blacharskie, orynnowanie.",
+    photo: {
+      src: `${IMG}/bud26.jpg`,
+      alt: "Dach z blachy na rąbek stojący z rynnami",
+    },
+  },
+  {
+    no: "07",
+    title: "Hale i wiaty stalowe",
+    note: "Montaż ram stalowych i obudowa obiektu.",
+    photo: {
+      src: `${IMG}/bud19.jpg`,
+      alt: "Montaż stalowej ramy portalowej",
+    },
+  },
+  {
+    no: "08",
     title: "Nawierzchnie sportowe",
     note: "Podbudowa i nawierzchnia boisk.",
     photo: {
@@ -207,7 +202,7 @@ export const services = [
       alt: "Gotowe boisko wielofunkcyjne z bramką i koszem",
     },
   },
-] as const;
+];
 
 /** Wyłącznie kontrakty potwierdzone publicznie. Podpisanie ≠ zakończenie. */
 export const contracts = [
@@ -217,7 +212,7 @@ export const contracts = [
     place: "Oczyszczalnia ścieków, ul. Polna 51, Nowy Targ",
     signed: "11.02.2026",
     deadline: "30.06.2027",
-    status: "Umowa podpisana — realizacja w toku",
+    status: "Umowa podpisana, realizacja w toku",
     source:
       "https://mzwik.nowytarg.pl/podpisanie-umowy-o-na-realizacje-zadania-pn-rozbiorka-obiektu-magazynowego-oraz-budowa-budynku-biurowo-socjalnego-wraz-z-infrastruktura-techniczna-stanowiacego-zaplecze-socjalne-dla-pracowni/",
     sourceLabel: "mzwik.nowytarg.pl",
@@ -281,10 +276,33 @@ export const demoReviews: DemoReview[] = [
   },
   {
     label: "Opinia przykładowa 07",
-    text: "Konstrukcja stalowa zmontowana w zapowiedzianym terminie.",
+    text: "Hala stalowa zmontowana w zapowiedzianym terminie.",
   },
   {
     label: "Opinia przykładowa 08",
     text: "Porządek na budowie i jasne rozliczenie materiałów.",
   },
 ];
+
+/* ------------------------------------------------------------------ *
+ * Zapytanie o wycenę. Formularz żyje w modalu, nie na osobnej stronie.
+ * ------------------------------------------------------------------ */
+
+/** Rodzaje inwestycji. Celowo szerokie, żeby nie obiecywać usług,
+ *  których firma nie potwierdziła. */
+export const projectTypes = [
+  { id: "dom", label: "Dom", note: "Budynek mieszkalny." },
+  { id: "obiekt", label: "Obiekt budowlany", note: "Hala, wiata, budynek użytkowy." },
+  { id: "prace", label: "Prace budowlane", note: "Wybrany zakres robót." },
+  { id: "inna", label: "Inna inwestycja", note: "Opowiedz nam o niej." },
+] as const;
+
+/** Limity załączników. Te same wartości obowiązują w przeglądarce i na
+ *  serwerze — przeglądarka daje wygodę, serwer decyduje. */
+export const uploadLimits = {
+  maxFiles: 4,
+  maxFileBytes: 4 * 1024 * 1024,
+  maxTotalBytes: 8 * 1024 * 1024,
+  accept: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
+  acceptAttr: ".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf",
+} as const;

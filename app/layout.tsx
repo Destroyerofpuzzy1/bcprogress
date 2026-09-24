@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Geist } from "next/font/google";
 import "./globals.css";
+import { WycenaProvider } from "@/components/wycena/WycenaProvider";
 import { company } from "@/lib/content";
 
 const archivo = Archivo({
@@ -19,16 +20,16 @@ const geist = Geist({
 export const metadata: Metadata = {
   metadataBase: new URL("https://bcprogres.pl"),
   title: {
-    default: "BC PROGRES — firma budowlana, Ochotnica Dolna",
-    template: "%s — BC PROGRES",
+    default: "BC PROGRES, firma budowlana z Ochotnicy Dolnej",
+    template: "%s, BC PROGRES",
   },
   description:
-    "BC PROGRES sp. z o.o. — budowa domów i obiektów, konstrukcje dachowe i stalowe, prace ziemne. Ochotnica Dolna.",
+    "BC PROGRES sp. z o.o. Budowa domów i obiektów, więźby i pokrycia dachowe, hale stalowe, prace ziemne. Ochotnica Dolna.",
   openGraph: {
     type: "website",
     locale: "pl_PL",
     siteName: "BC PROGRES sp. z o.o.",
-    title: "BC PROGRES — firma budowlana, Ochotnica Dolna",
+    title: "BC PROGRES, firma budowlana z Ochotnicy Dolnej",
     description: "Budowa domów i obiektów. Ochotnica Dolna.",
     images: ["/assets/bc-progres/img/hero-poster.jpg"],
   },
@@ -76,7 +77,7 @@ export default function RootLayout({
         >
           Przejdź do treści
         </a>
-        {children}
+        <WycenaProvider>{children}</WycenaProvider>
       </body>
     </html>
   );

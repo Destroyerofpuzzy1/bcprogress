@@ -38,7 +38,7 @@ export function Opinie() {
         <p className="mt-6 inline-flex items-center gap-3 bg-yellow px-4 py-2.5">
           <span className="block h-2 w-2 shrink-0 bg-graphite" aria-hidden="true" />
           <span className="eyebrow text-graphite">
-            Przykładowe opinie — demo
+            Przykładowe opinie (demo)
           </span>
         </p>
       </div>

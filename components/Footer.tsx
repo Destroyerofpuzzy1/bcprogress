@@ -71,6 +71,29 @@ export function Footer() {
         </p>
         <p className="text-xs text-bone/35">Ochotnica Dolna, Małopolska</p>
       </div>
+
+      {/* Podpis wykonawcy strony. */}
+      <div className="gut spine-dark py-5">
+        <p className="text-xs text-bone/30">
+          Strona wykonana przez{" "}
+          <a
+            href="https://leadpage.pl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 border-b border-bone/20 pb-0.5 text-bone/55 transition-colors hover:border-yellow hover:text-yellow"
+          >
+            LeadPage
+            <svg
+              viewBox="0 0 12 12"
+              fill="none"
+              className="w-2.5 transition-transform duration-400 ease-[var(--ease-out-quint)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            >
+              <path d="M1 11L11 1M4 1h7v7" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </a>
+        </p>
+      </div>
     </footer>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { company, mapEmbedUrl, mapLinkUrl } from "@/lib/content";
+import { useWycena } from "@/components/wycena/WycenaProvider";
 import { Reveal } from "./Section";
 
 /**
@@ -16,6 +17,7 @@ import { Reveal } from "./Section";
  * blokować zdarzeń.
  */
 export function Mapa() {
+  const { otworz } = useWycena();
   const root = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   const [interactive, setInteractive] = useState(false);
@@ -54,7 +56,7 @@ export function Mapa() {
             {inView && (
               <iframe
                 src={mapEmbedUrl}
-                title="Mapa — os. Równie 2, 34-452 Ochotnica Dolna"
+                title="Mapa dojazdu, os. Równie 2, 34-452 Ochotnica Dolna"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 allowFullScreen
@@ -108,13 +110,14 @@ export function Mapa() {
               Otwórz w Google Maps
               <ExternalArrow />
             </a>
-            <a
-              href="#kontakt"
+            <button
+              type="button"
+              onClick={() => otworz()}
               className="group inline-flex items-center justify-between gap-6 border border-graphite/25 px-6 py-3.5 text-[12px] font-bold tracking-[0.16em] text-graphite uppercase transition-colors duration-400 hover:border-graphite hover:bg-graphite hover:text-bone"
             >
-              Zapytaj o wycenę
+              Poproś o wycenę
               <ExternalArrow />
-            </a>
+            </button>
           </div>
         </Reveal>
       </div>

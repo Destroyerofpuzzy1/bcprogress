@@ -7,15 +7,77 @@ import { SectionHead } from "./Section";
 import { Lightbox } from "./Lightbox";
 import { projects, type Project } from "@/lib/content";
 
-/** Rytm siatki — asymetryczny, budowany blokami, nie kafelkami. */
+/**
+ * Rytm siatki.
+ *
+ * Telefon ma własną reżyserię, a nie zwężony desktop: raz kadr pionowy na całą
+ * szerokość, raz niższy poziomy, raz węższy wcięty do krawędzi. `mFrame`
+ * opisuje kadr na telefonie, `col`/`ratio` układ od `lg` w górę.
+ */
 const layout = [
-  { col: "lg:col-span-6", ratio: "aspect-[4/5]", push: "", size: "(min-width:1024px) 49vw, 100vw" },
-  { col: "lg:col-span-4 lg:col-start-9", ratio: "aspect-[3/4]", push: "lg:mt-20", size: "(min-width:1024px) 33vw, 100vw" },
-  { col: "lg:col-span-4", ratio: "aspect-[3/4]", push: "", size: "(min-width:1024px) 33vw, 100vw" },
-  { col: "lg:col-span-4 lg:col-start-8", ratio: "aspect-[4/5]", push: "lg:mt-28", size: "(min-width:1024px) 33vw, 100vw" },
-  { col: "lg:col-span-5 lg:col-start-2", ratio: "aspect-[4/5]", push: "", size: "(min-width:1024px) 41vw, 100vw" },
-  { col: "lg:col-span-3 lg:col-start-10", ratio: "aspect-[3/4]", push: "lg:mt-24", size: "(min-width:1024px) 25vw, 100vw" },
-  { col: "lg:col-span-7 lg:col-start-4", ratio: "aspect-[4/3]", push: "", size: "(min-width:1024px) 58vw, 100vw" },
+  {
+    col: "lg:col-span-6",
+    ratio: "lg:aspect-[4/5]",
+    push: "",
+    mFrame: "aspect-[3/4]",
+    mWrap: "",
+    pos: "object-center",
+    size: "(min-width:1024px) 49vw, 100vw",
+  },
+  {
+    col: "lg:col-span-4 lg:col-start-9",
+    ratio: "lg:aspect-[3/4]",
+    push: "lg:mt-20",
+    mFrame: "aspect-[4/5]",
+    mWrap: "ml-auto w-[78%] lg:w-full",
+    pos: "object-center",
+    size: "(min-width:1024px) 33vw, 78vw",
+  },
+  {
+    col: "lg:col-span-4",
+    ratio: "lg:aspect-[3/4]",
+    push: "",
+    mFrame: "aspect-[16/11]",
+    mWrap: "",
+    pos: "object-top lg:object-center",
+    size: "(min-width:1024px) 33vw, 100vw",
+  },
+  {
+    col: "lg:col-span-4 lg:col-start-8",
+    ratio: "lg:aspect-[4/5]",
+    push: "lg:mt-28",
+    mFrame: "aspect-[3/4]",
+    mWrap: "w-[70%] lg:w-full",
+    pos: "object-center",
+    size: "(min-width:1024px) 33vw, 70vw",
+  },
+  {
+    col: "lg:col-span-5 lg:col-start-2",
+    ratio: "lg:aspect-[4/5]",
+    push: "",
+    mFrame: "aspect-[5/4]",
+    mWrap: "",
+    pos: "object-center",
+    size: "(min-width:1024px) 41vw, 100vw",
+  },
+  {
+    col: "lg:col-span-3 lg:col-start-10",
+    ratio: "lg:aspect-[3/4]",
+    push: "lg:mt-24",
+    mFrame: "aspect-square",
+    mWrap: "ml-auto w-[82%] lg:w-full",
+    pos: "object-center",
+    size: "(min-width:1024px) 25vw, 82vw",
+  },
+  {
+    col: "lg:col-span-7 lg:col-start-4",
+    ratio: "lg:aspect-[4/3]",
+    push: "",
+    mFrame: "aspect-[16/10]",
+    mWrap: "",
+    pos: "object-center",
+    size: "(min-width:1024px) 58vw, 100vw",
+  },
 ];
 
 const blocks = [
@@ -120,7 +182,11 @@ function Tile({
         onClick={onOpen}
         className="group block w-full cursor-pointer text-left"
       >
-        <div className={`tile-clip relative overflow-hidden bg-bone-2 ${cfg.ratio}`}>
+        {/* Wcięcie dotyczy samego kadru — podpis zostaje na siatce strony,
+              więc tytuły nie łamią się w wąskiej kolumnie. */}
+        <div
+          className={`tile-clip relative overflow-hidden bg-bone-2 ${cfg.mFrame} ${cfg.ratio} ${cfg.mWrap}`}
+        >
           {/* Dwie warstwy ruchu: GSAP posiada transform warstwy .tile-img
               (wejście + paralaksa), CSS posiada transform warstwy .tile-hover. */}
           <div className="tile-img absolute inset-x-0 -top-[5%] -bottom-[5%]">
@@ -130,11 +196,12 @@ function Tile({
                 alt={project.photos[0].alt}
                 fill
                 sizes={cfg.size}
-                className="object-cover"
+                className={`object-cover ${cfg.pos}`}
               />
             </div>
           </div>
-          <span className="absolute right-0 bottom-0 flex h-12 w-12 items-center justify-center bg-yellow opacity-0 transition-opacity duration-400 group-hover:opacity-100">
+          {/* Na dotyku strzałka jest widoczna od razu — nie ma tu najechania. */}
+          <span className="absolute right-0 bottom-0 flex h-11 w-11 items-center justify-center bg-yellow transition-opacity duration-400 sm:h-12 sm:w-12 lg:opacity-0 lg:group-hover:opacity-100">
             <svg viewBox="0 0 24 12" fill="none" className="w-5 text-graphite" aria-hidden="true">
               <path d="M0 6h22M17 1l5 5-5 5" stroke="currentColor" strokeWidth="1.6" />
             </svg>
